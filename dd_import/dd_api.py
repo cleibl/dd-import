@@ -5,7 +5,7 @@ import requests
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
-from dd_import.environment import Environment
+from environment import Environment
 
 # Disable SSL Warnings
 disable_warnings(InsecureRequestWarning)
@@ -16,9 +16,10 @@ class Api:
     def __init__(self):
         self.environment = Environment()
         self.headers = {'Content-type': 'application/json',
-                        'Authorization': 'Token ' + self.environment.api_key}
-        self.headers_without_json = {'Authorization':
-                                     'Token ' + self.environment.api_key}
+                        'Authorization': 'Token ' + self.environment.api_key,
+                        'Proxy-Authorization': 'Bearer ' + self.environment.id_token}
+        self.headers_without_json = {'Authorization': 'Token ' + self.environment.api_key,
+                                     'Proxy-Authorization': 'Bearer ' + self.environment.id_token}
         self.product_type_url = self.environment.url + '/api/v2/product_types/'
         self.product_url = self.environment.url + '/api/v2/products/'
         self.engagement_url = self.environment.url + '/api/v2/engagements/'

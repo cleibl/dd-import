@@ -1,6 +1,10 @@
 import os
 from distutils.util import strtobool
-
+import google.oauth2.id_token
+import google.auth.transport.requests
+import google.auth
+from google.auth.transport.requests import AuthorizedSession
+import json
 
 class Environment:
 
@@ -26,6 +30,28 @@ class Environment:
         self.branch_tag = os.getenv('DD_BRANCH_TAG', None)
         self.api_scan_configuration_id = os.getenv('DD_API_SCAN_CONFIGURATION_ID', None)
         self.ssl_verification = bool(strtobool(os.getenv('DD_SSL_VERIFY', 'true')))
+        self.audience = os.getenv('IAP_AUDIENCE', None)
+        self.service_account_email = os.getenv('IAP_SERVICE_ACCOUNT_EMAIL')
+        self.id_token = self.get_id_token(self.audience, self.service_account_email)
+
+    def get_id_token(self, audience, service_account_email):
+        credentials, project_id = google.auth.default(
+            scopes='https://www.googleapis.com/auth/cloud-platform')
+
+        sa_credentials_url = f'https://iamcredentials.googleapis.com/' \
+                             f'v1/projects/-/serviceAccounts/' \
+                             f'{service_account_email}:generateIdToken'
+
+        headers = {'Content-Type': 'application/json'}
+
+        authed_session = AuthorizedSession(credentials)
+        body = json.dumps({'audience': audience, 'includeEmail': True})
+        token_response = authed_session.request('POST', sa_credentials_url,
+                                                data=body, headers=headers)
+        jwt = token_response.json()
+        id_token = jwt['token']
+
+        return id_token
 
     def check_environment_reimport_findings(self):
         error_string = self.check_environment_common()
