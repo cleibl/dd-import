@@ -15,11 +15,8 @@ class Api:
 
     def __init__(self):
         self.environment = Environment()
-        self.headers = {'Content-type': 'application/json',
-                        'Authorization': 'Token ' + self.environment.api_key,
-                        'Proxy-Authorization': 'Bearer ' + self.environment.id_token}
-        self.headers_without_json = {'Authorization': 'Token ' + self.environment.api_key,
-                                     'Proxy-Authorization': 'Bearer ' + self.environment.id_token}
+        self.headers = self.get_headers().get('headers')
+        self.headers_without_json = self.get_headers().get('headers_without_json')
         self.product_type_url = self.environment.url + '/api/v2/product_types/'
         self.product_url = self.environment.url + '/api/v2/products/'
         self.engagement_url = self.environment.url + '/api/v2/engagements/'
@@ -43,6 +40,30 @@ class Api:
                 print('Product type found, id: ', product_type_id)
                 return product_type_id
         raise Exception(f'Product type {self.environment.product_type_name} not found')
+
+    def get_headers(self):
+        d = dict()
+        if self.environment.iap_enabled == 'true':
+            d['headers'] = {
+             'Content-type': 'application/json',
+             'Authorization': 'Token ' + self.environment.api_key,
+             'Proxy-Authorization': 'Bearer ' + self.environment.id_token
+            }
+            d['headers_without_json'] = {
+             'Authorization': 'Token ' + self.environment.api_key,
+             'Proxy-Authorization': 'Bearer ' + self.environment.id_token
+            }
+
+        else:
+            d['headers'] = {
+             'Content-type': 'application/json',
+             'Authorization': 'Token ' + self.environment.api_key,
+            }
+            d['headers_without_json'] = {
+             'Authorization': 'Token ' + self.environment.api_key,
+            }
+
+        return d
 
     def get_product(self, product_type):
         payload = {'name': self.environment.product_name,

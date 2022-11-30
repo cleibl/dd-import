@@ -31,8 +31,14 @@ class Environment:
         self.api_scan_configuration_id = os.getenv('DD_API_SCAN_CONFIGURATION_ID', None)
         self.ssl_verification = bool(strtobool(os.getenv('DD_SSL_VERIFY', 'true')))
         self.audience = os.getenv('IAP_AUDIENCE', None)
-        self.service_account_email = os.getenv('IAP_SERVICE_ACCOUNT_EMAIL')
-        self.id_token = self.get_id_token(self.audience, self.service_account_email)
+        self.iap_enabled = os.getenv('IAP_ENABLED', 'False').lower()
+
+        if os.getenv('IAP_ENABLED') == 'true':
+            if os.getenv('IAP_ID_TOKEN') is None:
+                self.service_account_email = os.getenv('IAP_SERVICE_ACCOUNT_EMAIL')
+                self.id_token = self.get_id_token(self.audience, self.service_account_email)
+            else:
+                self.id_token = os.getenv('IAP_ID_TOKEN')
 
     def get_id_token(self, audience, service_account_email):
         credentials, project_id = google.auth.default(

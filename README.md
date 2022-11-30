@@ -77,6 +77,7 @@ All parameters need to be provided as environment variables
 | DD_SSL_VERIFY         |      Optional      | Optional         | Disable SSL verification by setting to `false` or `0`. Default: `true`                            |
  | IAP_AUDIENCE         |     Mandatory      | Mandatory        | The audience (client ID) used for the IAP protected application                                   |
  | IAP_SERVICE_ACCOUNT_EMAIL | Mandatory     | Mandatory        | The email address for the Service Account with IAP permissions to access the application          | 
+ | IAP_ID_TOKEN              | Optional      | Optional         | The JWT Token (ID Token) for the Service Account.  Used to Call IAP |
 
 ### Usage
 
