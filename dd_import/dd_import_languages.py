@@ -1,5 +1,5 @@
-from dd_api import Api
-from environment import Environment
+from dd_import.dd_api import Api
+from dd_import.environment import Environment
 
 
 def dd_import_languages():

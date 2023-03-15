@@ -5,7 +5,7 @@ import requests
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 
-from environment import Environment
+from dd_import.environment import Environment
 
 # Disable SSL Warnings
 disable_warnings(InsecureRequestWarning)
@@ -62,7 +62,7 @@ class Api:
             d['headers_without_json'] = {
              'Authorization': 'Token ' + self.environment.api_key,
             }
-
+        print(d)
         return d
 
     def get_product(self, product_type):

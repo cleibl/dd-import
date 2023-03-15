@@ -1,0 +1,68 @@
+name: Build, Push, Checkout, Notify
+
+on:
+  push:
+    branches:
+      - production
+      - test
+      - develop
+    paths-ignore:
+      - terraform/**
+      - Docs/*
+      - test/*
+      - /.gitignore
+      - /Makefile
+      - /*.md
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  GITHUB_REF: ${{ github.ref }}
+  IMAGE: admin
+
+concurrency: ci-${{ github.ref }}
+
+jobs:
+  setup-build-publish-deploy:
+    permissions:
+      id-token: write
+      contents: write
+    name: Setup, Build, and Publish
+    runs-on: ubuntu-latest
+    steps:
+    # Sets environment variables for all steps
+    - name: 'set env'
+      shell: bash
+      run : |
+        echo "DEV_REGISTRY_HOSTNAME=us-docker.pkg.dev/prj-d-artifact-registry-6ad8/ar-d-docker" >> $GITHUB_ENV
+        echo "TEST_REGISTRY_HOSTNAME=us-docker.pkg.dev/prj-t-artifact-registry-4606/ar-t-docker" >> $GITHUB_ENV
+        echo "PRODUCTION_REGISTRY_HOSTNAME=us-docker.pkg.dev/prj-p-artifact-registry-68bf/ar-p-docker" >> $GITHUB_ENV
+        echo "GITHUB_SHA=${{ github.sha }}" >> $GITHUB_ENV
+        echo "GITHUB_REF=${{ github.ref }}" >> $GITHUB_ENV
+        if [[ $GITHUB_REF_NAME == "develop" ]]; then
+          echo "GCP_SA=sa-d-ar-gh-actions@prj-d-artifact-registry-6ad8.iam.gserviceaccount.com" >> $GITHUB_ENV
+        elif [[ $GITHUB_REF_NAME == "test" ]]; then
+          echo "GCP_SA=sa-t-ar-gh-actions@prj-t-artifact-registry-4606.iam.gserviceaccount.com" >> $GITHUB_ENV
+        elif [[ $GITHUB_REF_NAME == "production" ]]; then
+          echo "GCP_SA=sa-p-ar-gh-actions@prj-p-artifact-registry-68bf.iam.gserviceaccount.com" >> $GITHUB_ENV
+        else
+          echo "ERROR: Unable to determine branch name"
+          exit 1
+        fi
+        echo TEST_EXIST=$(git ls-remote --heads origin test) >> $GITHUB_ENV
+        echo BRANCH_TYPE=${{ steps.get-branch-type.outputs.branch-type }} >> $GITHUB_ENV
+
+    # Authenticate to Google Cloud using Workload Identity.  GH will trade a GH token for GCP access token
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0.5.0'
+      with:
+        token_format: 'access_token'
+        workload_identity_provider: projects/935051330541/locations/global/workloadIdentityPools/wif-gh-pool/providers/wif-gh-provider
+        service_account: ${{ env.GCP_SA }}
+
+    # This runs "docker login" directly to Artifact Registry.
+    - id: 'docker-login'
+      name: 'Authenticate to Arifact Registry Docker'
+      shell: bash
+      run: |
+        echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://us-docker.pkg.dev
